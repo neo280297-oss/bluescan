@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlueScan — 3D-сканер объемных предметов</title>
+<style>
+:root{--bg:#050d19;--panel:#0a1728;--panel2:#0d1e33;--line:#1b3554;--blue:#168cff;--cyan:#43c9ff;--text:#e6f1ff;--muted:#8ca7c9;--green:#36d399;--red:#ff667a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 55% -20%,#12325a 0,transparent 45%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+button,select{font:inherit}button{cursor:pointer;border:1px solid #24517d;background:#102845;color:var(--text);border-radius:10px;padding:11px 15px;transition:.18s}button:hover{border-color:var(--cyan);filter:brightness(1.15)}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:linear-gradient(120deg,#0878ed,#168cff);border-color:#279bff;font-weight:650}.danger{border-color:#713448;background:#321827}.top{height:76px;display:flex;align-items:center;gap:30px;padding:0 24px;border-bottom:1px solid var(--line);background:#061120d9;position:sticky;top:0;z-index:3}.brand{display:flex;align-items:center;gap:12px;font-size:27px;font-weight:750;letter-spacing:-1px;color:#46a5ff}.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#63d3ff,#0871ef);display:grid;place-items:center;color:#00162c;font-weight:900;font-size:22px;box-shadow:0 0 25px #168cff44}.topnav{display:flex;gap:8px}.topnav button{background:transparent;border-color:transparent;color:#aac1e0}.status{margin-left:auto;color:var(--muted);display:flex;align-items:center;gap:9px}.dot{width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:0 0 12px #36d39988}.layout{display:grid;grid-template-columns:220px minmax(380px,1fr) 320px;gap:16px;padding:16px;max-width:1800px;margin:auto}.side,.panel{background:linear-gradient(145deg,#0a1728f5,#071323f5);border:1px solid var(--line);border-radius:15px;min-width:0}.side{padding:18px 12px;display:flex;flex-direction:column;gap:7px}.side h3{margin:0 8px 3px;font-size:18px}.sub{color:var(--muted);font-size:12px;margin:0 8px 15px}.navitem{text-align:left;background:transparent;border-color:transparent;color:#a8c1e2;display:flex;gap:12px;align-items:center}.navitem.active{background:#0e3156;border-color:#145d9a;color:#65bdff}.side-note{margin-top:auto;border:1px solid var(--line);padding:14px;border-radius:12px;color:var(--muted);font-size:12px}.main{display:flex;flex-direction:column;gap:16px;min-width:0}.panel{padding:17px}.panel h2,.panel h3{margin:0 0 14px}.panel h2{font-size:19px}.steps{display:flex;justify-content:space-between;gap:7px;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:13px;color:var(--muted);font-size:12px}.step{display:flex;align-items:center;gap:7px}.num{width:25px;height:25px;border:1px solid #315477;border-radius:50%;display:grid;place-items:center;color:#b8d6f7}.step.active{color:#55b7ff}.step.active .num{background:var(--blue);border-color:var(--blue);color:white}.camera-frame{position:relative;aspect-ratio:16/10;background:#020711;border:1px solid #1678cf;border-radius:12px;overflow:hidden;display:grid;place-items:center}.camera-frame video,.camera-frame canvas{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}.camera-frame video{transform:scaleX(-1)}.overlay{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(#278be51c 1px,transparent 1px),linear-gradient(90deg,#278be51c 1px,transparent 1px);background-size:10% 10%}.corners{position:absolute;inset:15%;border:1px solid #32a8ff66;pointer-events:none}.cam-label{position:absolute;top:12px;left:12px;background:#061424d9;border:1px solid #254667;padding:7px 10px;border-radius:8px;font-size:12px}.cam-label.right{left:auto;right:12px}.placeholder{z-index:1;text-align:center;color:#89a9ce;padding:25px;max-width:360px}.placeholder .big{font-size:52px;color:#268fff}.controlbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px}.controlbar label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}.controlbar select{background:#0b1e34;color:var(--text);border:1px solid #274768;border-radius:8px;padding:10px;max-width:220px}.hint{flex:1;min-width:160px;color:var(--muted);font-size:12px}.rightcol{display:flex;flex-direction:column;gap:16px;min-width:0}.preview{height:290px;border:1px solid var(--line);border-radius:11px;background:radial-gradient(ellipse at center,#112d4b,#030b16 75%);position:relative;overflow:hidden;display:grid;place-items:center}.preview canvas{width:100%;height:100%}.preview-placeholder{text-align:center;color:#6f91b9;font-size:12px;padding:18px}.metric{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #172b43;color:var(--muted);font-size:12px}.metric strong{color:#d9eaff;font-weight:600;text-align:right}.capture-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.shot{aspect-ratio:1;border:1px solid #274768;border-radius:8px;overflow:hidden;background:#06101d;position:relative}.shot img{width:100%;height:100%;object-fit:cover}.shot span{position:absolute;bottom:4px;left:5px;background:#04101dcc;border-radius:4px;padding:1px 4px;font-size:10px}.progress{height:5px;background:#132a43;border-radius:9px;overflow:hidden;margin-top:12px}.progress div{height:100%;width:0;background:linear-gradient(90deg,#0878ed,#52d3ff);transition:width .2s}.notice{color:#8eacd0;font-size:12px}.notice strong{color:#55b7ff}.hidden{display:none!important}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#123251;border:1px solid #2b73ac;padding:11px 18px;border-radius:10px;z-index:10;box-shadow:0 8px 35px #0008;max-width:90vw}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}.gallery-item{border:1px solid var(--line);border-radius:10px;padding:8px;color:var(--muted);font-size:12px}.gallery-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;margin-bottom:6px}
+@media(max-width:1150px){.layout{grid-template-columns:190px minmax(0,1fr)}.rightcol{grid-column:2;display:grid;grid-template-columns:1fr 1fr}.rightcol .panel:first-child{grid-row:span 2}.side{grid-row:span 2}}
+@media(max-width:760px){.top{padding:0 13px;height:65px}.brand{font-size:22px}.topnav{display:none}.status{font-size:11px}.layout{grid-template-columns:1fr;padding:10px}.side{display:none}.rightcol{grid-column:auto;display:flex}.steps{font-size:10px}.step{flex-direction:column;gap:3px}.capture-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.panel{padding:13px}.controlbar .primary{width:100%}}
+</style>
+<style>
+.scan-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}.scan-actions label{color:var(--muted);font-size:12px}.scan-actions select{margin-left:8px}.preview{touch-action:none;cursor:grab}.preview:active{cursor:grabbing}.model-note{color:var(--muted);font-size:12px;margin:8px 0}.model-stat{font-variant-numeric:tabular-nums}
+@media(max-width:760px){.scan-actions>*{flex:1 1 100%}.scan-actions select{margin:6px 0 0;width:100%}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">◆</div>BlueScan</div>
+  <nav class="topnav"><button onclick="showSection('scan')">▣ Сканирование</button><button onclick="showSection('models')">⬡ Мои снимки</button></nav>
+  <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Камера не подключена</span></div>
+</header>
+<div class="layout">
+  <aside class="side">
+    <h3>BlueScan</h3><p class="sub">Инструмент захвата для 3D-реконструкции</p>
+    <button class="navitem active" id="navScan" onclick="showSection('scan')">▣ Сканирование</button>
+    <button class="navitem" id="navModels" onclick="showSection('models')">⬡ Мои снимки</button>
+    <button class="navitem" onclick="exportSession()">⇩ Экспорт снимков</button>
+    <button class="navitem" onclick="showHelp()">ⓘ Помощь</button>
+    <div class="side-note"><div style="color:#52b7ff;font-size:24px;margin-bottom:7px">⬡</div><b style="color:#dcecff">От реального объекта к 3D</b><p>Снимите предмет по кругу и получите приближенную модель по его силуэтам.</p></div>
+  </aside>
+  <main class="main" id="scanSection">
+    <section class="panel">
+      <h2>BlueScan — сканер объемных предметов</h2>
+      <p class="notice">Создавайте приблизительные цифровые модели объемных предметов по серии кадров с камеры. Точность до 0,02 мм возможна только у специализированного откалиброванного 3D-сканера.</p>
+      <div class="steps">
+        <div class="step active" id="step1"><span class="num">1</span> Камера</div>
+        <div class="step" id="step2"><span class="num">2</span> Сбор снимков</div>
+        <div class="step" id="step3"><span class="num">3</span> 3D-модель</div>
+      </div>
+      <div class="camera-frame" id="cameraFrame">
+        <video id="video" autoplay playsinline muted class="hidden"></video>
+        <div class="placeholder" id="cameraPlaceholder"><div class="big">◉</div><b>Подключите камеру</b><p>Разрешите доступ к веб-камере, затем наведите её на объект.</p></div>
+        <div class="overlay"></div><div class="corners"></div>
+        <div class="cam-label" id="camBadge">● Ожидание камеры</div><div class="cam-label right" id="resolution">Источник не выбран</div>
+      </div>
+      <div class="controlbar">
+        <div><label for="cameraSelect">Источник камеры</label><select id="cameraSelect"><option value="">Автовыбор камеры</option></select></div>
+        <div class="hint">Зафиксируйте камеру. Поворачивайте предмет на одинаковый угол после каждого кадра.</div>
+        <button class="primary" id="connectBtn" onclick="connectCamera()">Подключить камеру</button>
+        <button id="captureBtn" onclick="capturePhoto()" disabled>＋ Снять кадр</button>
+      </div>
+      <div class="controlbar">
+        <button onclick="startCaptureSeries()" id="seriesBtn" disabled>▶ Серия снимков</button>
+        <button onclick="stopSeries()" id="stopBtn" disabled>Ⅱ Остановить</button>
+        <button class="danger" onclick="clearShots()">Очистить серию</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h3>Снимки текущей сессии <span id="shotCount" style="color:#54b8ff">0</span></h3>
+      <div class="capture-grid" id="captureGrid"><div class="notice">Здесь появятся кадры, снятые с вашей камеры.</div></div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <p class="notice" id="progressText">Для модели нужен полный оборот: 12–24 кадра в зависимости от выбранного шага.</p>
+      <div class="scan-actions">
+        <label for="angleStep">Шаг поворота<select id="angleStep" onchange="changeAngleStep()"><option value="15">15° · 24 кадра</option><option value="20">20° · 18 кадров</option><option value="30">30° · 12 кадров</option></select></label>
+        <button class="primary" id="buildModelBtn" onclick="buildModel()" disabled>Построить 3D-модель</button>
+        <button id="exportModelBtn" onclick="exportModel()" disabled>Скачать модель PLY</button>
+      </div>
+      <p class="model-note">Поставьте камеру неподвижно, разместите предмет по центру и поворачивайте его на выбранный угол после каждого снимка. Однотонный фон улучшает выделение силуэта.</p>
+    </section>
+  </main>
+  <main class="main hidden" id="modelsSection">
+    <section class="panel"><h2>Мои сессии захвата</h2><p class="notice">Снимки хранятся в памяти этой вкладки. Экспортируйте сессию, чтобы сохранить фотографии на компьютере.</p><div class="gallery" id="gallery"><p class="notice">Пока нет снимков.</p></div><div class="controlbar"><button class="primary" onclick="exportSession()">⇩ Экспортировать фотографии</button></div></section>
+  </main>
+  <aside class="rightcol">
+    <section class="panel">
+      <h3>Предпросмотр</h3>
+      <div class="preview"><canvas id="previewCanvas"></canvas><div class="preview-placeholder" id="previewText">◈<br><br>3D-модель ещё не построена<br><br>Снимите объект с разных сторон</div></div>
+      <div class="metric"><span>Сохранено кадров</span><strong id="metricShots">0</strong></div>
+      <div class="metric"><span>Размер кадра</span><strong id="metricRes">—</strong></div>
+      <div class="metric"><span>Результат</span><strong id="metricResult">Ожидание снимков</strong></div>
+      <div class="metric"><span>Точек модели</span><strong id="metricPoints">—</strong></div>
+      <button style="width:100%;margin-top:13px" onclick="exportSession()">⇩ Скачать фотографии</button>
+    </section>
+    <section class="panel">
+      <h3>Как получить 3D-модель</h3>
+      <p class="notice">1. Зафиксируйте камеру и равномерно поворачивайте предмет после каждого кадра.</p>
+      <p class="notice">2. Постройте модель: BlueScan пересечет силуэты и создаст облако точек визуальной оболочки.</p>
+      <p class="notice">3. Вращайте предпросмотр мышью или пальцем; скачайте результат в формате PLY.</p>
+      <p class="notice"><strong>Ограничение:</strong> визуальная оболочка дает приблизительную геометрию, не восстанавливает внутренние полости и не гарантирует точность 0,02 мм. Для метрологической точности нужен специализированный сканер и калибровка.</p>
+    </section>
+  </aside>
+</div>
+<div id="toast" class="toast hidden"></div>
+<canvas id="captureCanvas" class="hidden"></canvas>
+<script>
+const video=document.getElementById('video'), cameraSelect=document.getElementById('cameraSelect');
+let stream=null, shots=[], modelPoints=[], modelRotation={x:-.28,y:.55}, dragPoint=null, angleStep=15, seriesTimer=null, seriesCount=0, toastTimer=null;
+const $=id=>document.getElementById(id);
+function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.add('hidden'),3200)}
+async function listCameras(){
+ try{const devices=await navigator.mediaDevices.enumerateDevices();const cams=devices.filter(d=>d.kind==='videoinput');const prev=cameraSelect.value;cameraSelect.innerHTML='<option value="">Автовыбор камеры</option>';cams.forEach((c,i)=>{const o=document.createElement('option');o.value=c.deviceId;o.textContent=c.label||`Камера ${i+1}`;cameraSelect.append(o)});if(prev)cameraSelect.value=prev}catch(e){}
+}
+async function connectCamera(){
+ if(!navigator.mediaDevices?.getUserMedia){toast('Камера недоступна. Откройте сайт через HTTPS или localhost.');return}
+ try{
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  const deviceId=cameraSelect.value;
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:deviceId?{deviceId:{exact:deviceId},width:{ideal:1920},height:{ideal:1080}}:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}});
+  video.srcObject=stream;await video.play();video.classList.remove('hidden');$('cameraPlaceholder').classList.add('hidden');
+  const track=stream.getVideoTracks()[0],settings=track.getSettings();
+  $('statusText').textContent='Камера подключена';$('statusDot').style.background='var(--green)';$('camBadge').textContent='● Камера активна';$('resolution').textContent=(settings.width||'?')+' × '+(settings.height||'?');
+  $('captureBtn').disabled=false;$('seriesBtn').disabled=false;$('connectBtn').textContent='Переподключить';$('metricRes').textContent=(settings.width||'?')+' × '+(settings.height||'?');
+  await listCameras();if(deviceId)cameraSelect.value=deviceId;setStep(1);toast('Камера подключена. Можно снимать кадры.')
+ }catch(e){toast(e.name==='NotAllowedError'?'Нет разрешения на камеру. Разрешите доступ в браузере.':'Не удалось подключить камеру: '+e.message)}
+}
+function capturePhoto(){
+ if(!stream||!video.videoWidth){toast('Сначала подключите камеру.');return}
+ const c=$('captureCanvas');c.width=video.videoWidth;c.height=video.videoHeight;const ctx=c.getContext('2d');ctx.translate(c.width,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,c.width,c.height);ctx.setTransform(1,0,0,1,0,0);
+ const data=c.toDataURL('image/jpeg',.92), mask=makeSilhouette(c);
+ shots.push({data,mask,name:`bluescan_${String(shots.length+1).padStart(3,'0')}.jpg`,time:new Date().toISOString(),angle:(shots.length*angleStep)%360});
+ $('angleStep').disabled=true;
+ modelPoints=[];$('exportModelBtn').disabled=true;$('metricPoints').textContent='—';renderShots();setStep(2);$('metricResult').textContent='Снимки собраны';toast('Кадр '+shots.length+' сохранён · ракурс '+shots[shots.length-1].angle+'°')
+}
+function makeSilhouette(source){
+ const size=112,canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(source,0,0,size,size);
+ const image=ctx.getImageData(0,0,size,size),pixels=image.data,corners=[];
+ for(const [cx,cy] of [[3,3],[size-4,3],[3,size-4],[size-4,size-4]]){let color=[0,0,0],count=0;for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++){const i=(y*size+x)*4;color[0]+=pixels[i];color[1]+=pixels[i+1];color[2]+=pixels[i+2];count++}corners.push(color.map(v=>v/count))}
+ const raw=new Uint8Array(size*size);let minX=size,minY=size,maxX=0,maxY=0;
+ for(let y=5;y<size-5;y++)for(let x=5;x<size-5;x++){const i=(y*size+x)*4,r=pixels[i],g=pixels[i+1],b=pixels[i+2];let distance=Infinity;for(const bg of corners){const d=Math.hypot(r-bg[0],g-bg[1],b-bg[2]);if(d<distance)distance=d}if(distance>48){raw[y*size+x]=1;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)}}
+ if(maxX-minX<5||maxY-minY<5)return null;
+ const mask=new Uint8Array(size*size);for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)mask[y*size+x]=raw[y*size+x];
+ return{mask,size,minX,minY,width:maxX-minX+1,height:maxY-minY+1};
+}
+function startCaptureSeries(){if(seriesTimer)return;seriesCount=0;seriesTimer=setInterval(()=>{if(!stream||!video.videoWidth){stopSeries();return}capturePhoto();seriesCount++;$('progressText').textContent=`Автосъёмка: ${seriesCount} кадров. Двигайте камеру медленно вокруг объекта.`},1800);$('seriesBtn').disabled=true;$('stopBtn').disabled=false;toast('Автосъёмка началась: держите камеру устойчиво и медленно меняйте угол.')}
+function stopSeries(){if(seriesTimer){clearInterval(seriesTimer);seriesTimer=null}$('seriesBtn').disabled=!stream;$('stopBtn').disabled=true;if(seriesCount)$('progressText').textContent=`Серия завершена: добавлено ${seriesCount} кадров.`}
+function renderShots(){
+ $('shotCount').textContent=shots.length;$('metricShots').textContent=shots.length;$('progressBar').style.width=Math.min(100,shots.length/40*100)+'%';
+ const grid=$('captureGrid');grid.innerHTML='';
+ if(!shots.length){grid.innerHTML='<div class="notice">Здесь появятся кадры, снятые с вашей камеры.</div>'}else shots.slice(-10).forEach((s,i)=>{const d=document.createElement('div');d.className='shot';const img=document.createElement('img');img.src=s.data;const span=document.createElement('span');span.textContent=String(shots.length-Math.min(10,shots.length)+i+1).padStart(2,'0');d.append(img,span);grid.append(d)});
+ const gallery=$('gallery');gallery.innerHTML='';if(!shots.length)gallery.innerHTML='<p class="notice">Пока нет снимков.</p>';else shots.forEach((s,i)=>{const d=document.createElement('div');d.className='gallery-item';const img=document.createElement('img');img.src=s.data;const label=document.createElement('div');label.textContent=s.name;d.append(img,label);gallery.append(d)});
+ $('progressText').textContent=`Кадр ${shots.length}: ракурс ${shots.at(-1)?.angle??0}°. Нужно минимум 8 снимков; равномерный полный оборот дает лучший результат.`;$('buildModelBtn').disabled=shots.length<8;drawPreview()
+}
+function drawPreview(){
+ const c=$('previewCanvas'),ctx=c.getContext('2d'),r=c.getBoundingClientRect();c.width=Math.max(1,r.width*devicePixelRatio);c.height=Math.max(1,r.height*devicePixelRatio);ctx.scale(devicePixelRatio,devicePixelRatio);ctx.clearRect(0,0,r.width,r.height);
+ if(modelPoints.length){drawPointCloud(ctx,r.width,r.height);$('previewText').classList.add('hidden');return}
+ ctx.strokeStyle='#173b5e';ctx.lineWidth=1;
+ for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(0,r.height*.55+i*16);ctx.lineTo(r.width,r.height*.55+i*16);ctx.stroke()}
+ if(shots.length){$('previewText').classList.add('hidden');const img=new Image();img.onload=()=>{ctx.globalAlpha=.85;const w=Math.min(r.width*.8,r.height*.72*img.width/img.height),h=w*img.height/img.width;ctx.drawImage(img,(r.width-w)/2,(r.height-h)/2,w,h);ctx.globalAlpha=1};img.src=shots[shots.length-1].data;$('metricResult').textContent='Фото-набор готов'}else $('previewText').classList.remove('hidden')
+}
+function buildModel(){
+ const views=shots.filter(s=>s.mask),requiredViews=Math.round(360/angleStep),angles=new Set(views.map(s=>s.angle));if(views.length<8){toast('Нужно не менее 8 кадров с различимым силуэтом.');return}if(angles.size<requiredViews){toast(`Для полного оборота нужно ${requiredViews} кадров с шагом ${angleStep}°; сейчас ${angles.size}.`);return}
+ const resolution=40,points=[],maxWidth=Math.max(...views.map(s=>s.mask.width)),maxHeight=Math.max(...views.map(s=>s.mask.height));
+ for(let iy=0;iy<resolution;iy++)for(let ix=0;ix<resolution;ix++)for(let iz=0;iz<resolution;iz++){
+  const x=(ix/(resolution-1)-.5)*2,y=(iy/(resolution-1)-.5)*2,z=(iz/(resolution-1)-.5)*2;
+  let visible=true;
+  for(const shot of views){const m=shot.mask,a=shot.angle*Math.PI/180,projected=x*Math.cos(a)+z*Math.sin(a),u=Math.round((m.minX+m.width/2)+(projected*maxWidth/2)),v=Math.round((m.minY+m.height/2)-(y*maxHeight/2));if(u<0||u>=m.size||v<0||v>=m.size||!m.mask[v*m.size+u]){visible=false;break}}
+  if(visible)points.push({x,y,z});
+ }
+ if(!points.length){toast('Объем не найден. Проверьте фон, центр объекта и шаг поворота.');return}
+ modelPoints=points;$('metricPoints').textContent=points.length.toLocaleString('ru-RU');$('metricResult').textContent='Приближенная 3D-модель';$('exportModelBtn').disabled=false;$('previewText').classList.add('hidden');setStep(3);drawPreview();toast(`Оболочка построена: ${points.length.toLocaleString('ru-RU')} точек`)
+}
+function drawPointCloud(ctx,width,height){
+ ctx.fillStyle='#091827';ctx.fillRect(0,0,width,height);const cosY=Math.cos(modelRotation.y),sinY=Math.sin(modelRotation.y),cosX=Math.cos(modelRotation.x),sinX=Math.sin(modelRotation.x),scale=Math.min(width,height)*.39,projected=[];
+ for(const p of modelPoints){const x=p.x*cosY-p.z*sinY,z=p.x*sinY+p.z*cosY,y=p.y*cosX-z*sinX,depth=p.y*sinX+z*cosX;projected.push({x:width/2+x*scale,y:height/2-y*scale,depth})}
+ projected.sort((a,b)=>a.depth-b.depth);for(const p of projected){const alpha=.35+(p.depth+1)*.25;ctx.fillStyle=`rgba(53,190,255,${Math.min(.9,alpha)})`;ctx.fillRect(p.x,p.y,2,2)}
+}
+function exportModel(){if(!modelPoints.length)return;const vertices=modelPoints.map(p=>`${p.x.toFixed(5)} ${p.y.toFixed(5)} ${p.z.toFixed(5)} 55 180 245`).join('\n');const content=`ply\nformat ascii 1.0\nelement vertex ${modelPoints.length}\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header\n${vertices}\n`;const blob=new Blob([content],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='bluescan_visual_hull.ply';a.click();URL.revokeObjectURL(url)}
+function clearShots(){if(!shots.length)return; if(!confirm('Удалить все снимки текущей сессии?'))return;shots=[];modelPoints=[];$('angleStep').disabled=false;$('metricPoints').textContent='—';$('exportModelBtn').disabled=true;$('buildModelBtn').disabled=true;renderShots();$('metricResult').textContent='Ожидание снимков';toast('Серия очищена')}
+async function exportSession(){
+ if(!shots.length){toast('Сначала сделайте хотя бы один снимок.');return}
+ // Download the actual captured images individually; this works without external libraries.
+ for(let i=0;i<shots.length;i++){const a=document.createElement('a');a.href=shots[i].data;a.download=shots[i].name;document.body.appendChild(a);a.click();a.remove();await new Promise(r=>setTimeout(r,160))}
+ const manifest={application:'BlueScan Capture',note:'Images captured from the user camera. No 3D mesh has been reconstructed by this app.',created:new Date().toISOString(),count:shots.length,images:shots.map(s=>({name:s.name,time:s.time}))};
+ const blob=new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bluescan_session.json';a.click();URL.revokeObjectURL(a.href);setStep(3);toast('Скачивание фотографий запущено ('+shots.length+' файлов).')
+}
+function setStep(n){for(let i=1;i<=3;i++)$('step'+i).classList.toggle('active',i===n)}
+function changeAngleStep(){angleStep=Number($('angleStep').value)}
+function showSection(which){const scan=which==='scan';$('scanSection').classList.toggle('hidden',!scan);$('modelsSection').classList.toggle('hidden',scan);$('navScan').classList.toggle('active',scan);$('navModels').classList.toggle('active',!scan)}
+function showHelp(){toast('Снимайте неподвижный объект с разных ракурсов, с хорошим освещением и перекрытием кадров.')}
+if(navigator.mediaDevices?.addEventListener)navigator.mediaDevices.addEventListener('devicechange',listCameras);
+const previewCanvas=$('previewCanvas');previewCanvas.addEventListener('pointerdown',e=>{dragPoint={x:e.clientX,y:e.clientY};previewCanvas.setPointerCapture(e.pointerId)});previewCanvas.addEventListener('pointermove',e=>{if(!dragPoint||!modelPoints.length)return;modelRotation.y+=(e.clientX-dragPoint.x)*.009;modelRotation.x=Math.max(-1.4,Math.min(1.4,modelRotation.x+(e.clientY-dragPoint.y)*.009));dragPoint={x:e.clientX,y:e.clientY};drawPreview()});previewCanvas.addEventListener('pointerup',()=>dragPoint=null);previewCanvas.addEventListener('pointercancel',()=>dragPoint=null);
+window.addEventListener('resize',drawPreview);listCameras();drawPreview();
+</script>
+</body>
+</html>
