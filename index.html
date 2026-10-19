@@ -13,6 +13,7 @@ button,select{font:inherit}button{cursor:pointer;border:1px solid #24517d;backgr
 </style>
 <style>
 .scan-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}.scan-actions label{color:var(--muted);font-size:12px}.scan-actions select{margin-left:8px}.preview{touch-action:none;cursor:grab}.preview:active{cursor:grabbing}.model-note{color:var(--muted);font-size:12px;margin:8px 0}.model-stat{font-variant-numeric:tabular-nums}
+.model-note.scan-warning{color:#ffc66d}.model-note.scan-good{color:var(--green)}
 @media(max-width:760px){.scan-actions>*{flex:1 1 100%}.scan-actions select{margin:6px 0 0;width:100%}}
 </style>
 </head>
@@ -68,6 +69,7 @@ button,select{font:inherit}button{cursor:pointer;border:1px solid #24517d;backgr
         <button class="primary" id="buildModelBtn" onclick="buildModel()" disabled>Построить 3D-модель</button>
         <button id="exportModelBtn" onclick="exportModel()" disabled>Скачать модель PLY</button>
       </div>
+      <p class="model-note" id="scanFeedback" role="status" aria-live="polite">Подсказки по качеству снимка появятся после первого кадра.</p>
       <p class="model-note">Поставьте камеру неподвижно, разместите предмет по центру и поворачивайте его на выбранный угол после каждого снимка. Однотонный фон улучшает выделение силуэта.</p>
     </section>
   </main>
@@ -116,13 +118,17 @@ async function connectCamera(){
   await listCameras();if(deviceId)cameraSelect.value=deviceId;setStep(1);toast('Камера подключена. Можно снимать кадры.')
  }catch(e){toast(e.name==='NotAllowedError'?'Нет разрешения на камеру. Разрешите доступ в браузере.':'Не удалось подключить камеру: '+e.message)}
 }
-function capturePhoto(){
+function capturePhoto(automatic=false){
  if(!stream||!video.videoWidth){toast('Сначала подключите камеру.');return}
  const c=$('captureCanvas');c.width=video.videoWidth;c.height=video.videoHeight;const ctx=c.getContext('2d');ctx.translate(c.width,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,c.width,c.height);ctx.setTransform(1,0,0,1,0,0);
- const data=c.toDataURL('image/jpeg',.92), mask=makeSilhouette(c);
- shots.push({data,mask,name:`bluescan_${String(shots.length+1).padStart(3,'0')}.jpg`,time:new Date().toISOString(),angle:(shots.length*angleStep)%360});
+ const mask=makeSilhouette(c),sharpness=measureSharpness(c,mask);
+ if(automatic&&(!mask||mask.areaRatio<.025||mask.areaRatio>.72||sharpness<100)){updateScanFeedback(mask,sharpness);return false}
+ const data=c.toDataURL('image/jpeg',.92);
+ shots.push({data,mask,sharpness,name:`bluescan_${String(shots.length+1).padStart(3,'0')}.jpg`,time:new Date().toISOString(),angle:(shots.length*angleStep)%360});
  $('angleStep').disabled=true;
  modelPoints=[];$('exportModelBtn').disabled=true;$('metricPoints').textContent='—';renderShots();setStep(2);$('metricResult').textContent='Снимки собраны';toast('Кадр '+shots.length+' сохранён · ракурс '+shots[shots.length-1].angle+'°')
+ updateScanFeedback(mask,sharpness);
+ return true
 }
 function makeSilhouette(source){
  const size=112,canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(source,0,0,size,size);
@@ -130,11 +136,49 @@ function makeSilhouette(source){
  for(const [cx,cy] of [[3,3],[size-4,3],[3,size-4],[size-4,size-4]]){let color=[0,0,0],count=0;for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++){const i=(y*size+x)*4;color[0]+=pixels[i];color[1]+=pixels[i+1];color[2]+=pixels[i+2];count++}corners.push(color.map(v=>v/count))}
  const raw=new Uint8Array(size*size);let minX=size,minY=size,maxX=0,maxY=0;
  for(let y=5;y<size-5;y++)for(let x=5;x<size-5;x++){const i=(y*size+x)*4,r=pixels[i],g=pixels[i+1],b=pixels[i+2];let distance=Infinity;for(const bg of corners){const d=Math.hypot(r-bg[0],g-bg[1],b-bg[2]);if(d<distance)distance=d}if(distance>48){raw[y*size+x]=1;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)}}
- if(maxX-minX<5||maxY-minY<5)return null;
- const mask=new Uint8Array(size*size);for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)mask[y*size+x]=raw[y*size+x];
- return{mask,size,minX,minY,width:maxX-minX+1,height:maxY-minY+1};
+ const visited=new Uint8Array(size*size),queue=new Int32Array(size*size);let largest=[];
+ for(let start=0;start<raw.length;start++){
+  if(!raw[start]||visited[start])continue;
+  let head=0,tail=0;queue[tail++]=start;visited[start]=1;
+  while(head<tail){
+   const index=queue[head++],x=index%size,y=Math.floor(index/size);
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const nx=x+dx,ny=y+dy,next=ny*size+nx;
+    if((dx||dy)&&nx>=0&&nx<size&&ny>=0&&ny<size&&raw[next]&&!visited[next]){visited[next]=1;queue[tail++]=next}
+   }
+  }
+  if(tail>largest.length)largest=Array.from(queue.subarray(0,tail));
+ }
+ if(largest.length<25)return null;
+ minX=size;minY=size;maxX=0;maxY=0;const mask=new Uint8Array(size*size);
+ for(const index of largest){mask[index]=1;const x=index%size,y=Math.floor(index/size);minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)}
+ const width=maxX-minX+1,height=maxY-minY+1,centerX=(minX+maxX)/2,centerY=(minY+maxY)/2;
+ return{mask,size,minX,minY,width,height,areaRatio:largest.length/(size*size),centerOffset:Math.hypot((centerX-size/2)/(size/2),(centerY-size/2)/(size/2))};
 }
-function startCaptureSeries(){if(seriesTimer)return;seriesCount=0;seriesTimer=setInterval(()=>{if(!stream||!video.videoWidth){stopSeries();return}capturePhoto();seriesCount++;$('progressText').textContent=`Автосъёмка: ${seriesCount} кадров. Двигайте камеру медленно вокруг объекта.`},1800);$('seriesBtn').disabled=true;$('stopBtn').disabled=false;toast('Автосъёмка началась: держите камеру устойчиво и медленно меняйте угол.')}
+function measureSharpness(source,mask){
+ const width=160,height=90,canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(source,0,0,width,height);
+ const pixels=ctx.getImageData(0,0,width,height).data,gray=new Float32Array(width*height);
+ for(let i=0;i<gray.length;i++){const p=i*4;gray[i]=.299*pixels[p]+.587*pixels[p+1]+.114*pixels[p+2]}
+ let sum=0,sumSquares=0,count=0;
+ const minX=mask?Math.max(1,Math.floor(mask.minX/mask.size*width)-2):1,maxX=mask?Math.min(width-2,Math.ceil((mask.minX+mask.width)/mask.size*width)+2):width-2;
+ const minY=mask?Math.max(1,Math.floor(mask.minY/mask.size*height)-2):1,maxY=mask?Math.min(height-2,Math.ceil((mask.minY+mask.height)/mask.size*height)+2):height-2;
+ for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
+  const i=y*width+x,value=Math.abs(4*gray[i]-gray[i-1]-gray[i+1]-gray[i-width]-gray[i+width]);
+  sum+=value;sumSquares+=value*value;count++
+ }
+ const mean=sum/count;return sumSquares/count-mean*mean
+}
+function updateScanFeedback(mask,sharpness){
+ const feedback=$('scanFeedback');let message='Кадр достаточно резкий.';
+ if(!mask)message='Силуэт не выделен: используйте контрастный однотонный фон и больше света.';
+ else if(mask.areaRatio<.025)message='Объект слишком мал в кадре: подойдите ближе, сохранив его целиком.';
+ else if(mask.areaRatio>.72)message='Объект обрезан или занимает почти весь кадр: отодвиньте камеру.';
+ else if(sharpness<100)message='Кадр смазан: удерживайте камеру неподвижно и повторите снимок.';
+ else if(mask.centerOffset>.28)message='Сместите объект ближе к центру кадра.';
+ feedback.textContent=message;feedback.classList.toggle('scan-warning',!mask||mask.areaRatio<.025||mask.areaRatio>.72||sharpness<100||mask.centerOffset>.28);feedback.classList.toggle('scan-good',!feedback.classList.contains('scan-warning'))
+}
+function startCaptureSeries(){if(seriesTimer)return;seriesCount=0;seriesTimer=setInterval(()=>{if(!stream||!video.videoWidth){stopSeries();return}if(capturePhoto(true)){seriesCount++;$('progressText').textContent=`Автосъёмка: ${seriesCount} качественных кадров. Двигайте камеру медленно вокруг объекта.`}else $('progressText').textContent='Автосъёмка: кадр пропущен. '+$('scanFeedback').textContent},1800);$('seriesBtn').disabled=true;$('stopBtn').disabled=false;toast('Автосъёмка началась: кадры с плохой резкостью или невыделенным силуэтом будут пропущены.')}
 function stopSeries(){if(seriesTimer){clearInterval(seriesTimer);seriesTimer=null}$('seriesBtn').disabled=!stream;$('stopBtn').disabled=true;if(seriesCount)$('progressText').textContent=`Серия завершена: добавлено ${seriesCount} кадров.`}
 function renderShots(){
  $('shotCount').textContent=shots.length;$('metricShots').textContent=shots.length;$('progressBar').style.width=Math.min(100,shots.length/40*100)+'%';
@@ -168,7 +212,7 @@ function drawPointCloud(ctx,width,height){
  projected.sort((a,b)=>a.depth-b.depth);for(const p of projected){const alpha=.35+(p.depth+1)*.25;ctx.fillStyle=`rgba(53,190,255,${Math.min(.9,alpha)})`;ctx.fillRect(p.x,p.y,2,2)}
 }
 function exportModel(){if(!modelPoints.length)return;const vertices=modelPoints.map(p=>`${p.x.toFixed(5)} ${p.y.toFixed(5)} ${p.z.toFixed(5)} 55 180 245`).join('\n');const content=`ply\nformat ascii 1.0\nelement vertex ${modelPoints.length}\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header\n${vertices}\n`;const blob=new Blob([content],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='bluescan_visual_hull.ply';a.click();URL.revokeObjectURL(url)}
-function clearShots(){if(!shots.length)return; if(!confirm('Удалить все снимки текущей сессии?'))return;shots=[];modelPoints=[];$('angleStep').disabled=false;$('metricPoints').textContent='—';$('exportModelBtn').disabled=true;$('buildModelBtn').disabled=true;renderShots();$('metricResult').textContent='Ожидание снимков';toast('Серия очищена')}
+function clearShots(){if(!shots.length)return; if(!confirm('Удалить все снимки текущей сессии?'))return;shots=[];modelPoints=[];$('angleStep').disabled=false;$('metricPoints').textContent='—';$('exportModelBtn').disabled=true;$('buildModelBtn').disabled=true;$('scanFeedback').textContent='Подсказки по качеству снимка появятся после первого кадра.';$('scanFeedback').classList.remove('scan-warning','scan-good');renderShots();$('metricResult').textContent='Ожидание снимков';toast('Серия очищена')}
 async function exportSession(){
  if(!shots.length){toast('Сначала сделайте хотя бы один снимок.');return}
  // Download the actual captured images individually; this works without external libraries.
